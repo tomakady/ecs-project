@@ -1,0 +1,78 @@
+# Git
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Documentation
+README.md
+CHANGELOG.md
+LICENSE
+docs/
+*.md
+
+# CI/CD
+.github/
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Dependencies (frontend)
+web/node_modules/
+node_modules/
+npm-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build artifacts
+web/dist/
+web/build/
+dist/
+build/
+*.log
+
+# Testing
+coverage/
+.nyc_output/
+*.test.js
+**/__tests__/
+**/*.spec.js
+
+# Environment files
+.env
+.env.local
+.env.*.local
+*.env
+
+# Terraform (shouldn't be in app/ anyway)
+terraform/
+*.tfstate
+*.tfvars
+
+# Scripts
+scripts/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.bak
+*.cache
+
+# OS files
+Thumbs.db
+.DS_Store
+
+# Docker
+Dockerfile
+docker-compose.yml
+.dockerignore
