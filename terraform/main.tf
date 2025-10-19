@@ -8,13 +8,13 @@ terraform {
     }
   }
 
-  # backend "s3" {
-  #   bucket         = "memos-terraform-state"
-  #   key            = "memos/terraform.tfstate"
-  #   region         = "eu-west-2"
-  #   dynamodb_table = "memos-terraform-locks"
-  #   encrypt        = true
-  # }
+  backend "s3" {
+    bucket         = "memos-terraform-state"
+    key            = "memos/terraform.tfstate"
+    region         = "eu-west-2"
+    dynamodb_table = "memos-terraform-locks"
+    encrypt        = true
+  }
 }
 
 provider "aws" {
