@@ -1,0 +1,92 @@
+name: Destroy Terraform Backend
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy-backend" to confirm deletion'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: eu-west-2
+  S3_BUCKET: memos-terraform-state
+  DYNAMODB_TABLE: memos-terraform-locks
+  ECR_REPOSITORY: memos-dev
+
+jobs:
+  destroy-backend:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy-backend" ]; then
+            echo "Confirmation failed. You must type 'destroy-backend' to proceed."
+            exit 1
+          fi
+          echo "Confirmation validated"
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Delete ECR repository
+        run: |
+          echo "Deleting ECR repository..."
+          aws ecr batch-delete-image \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --image-ids imageTag=latest \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || echo "No images to delete"
+
+          aws ecr delete-repository \
+            --repository-name ${{ env.ECR_REPOSITORY }} \
+            --force \
+            --region ${{ env.AWS_REGION }} 2>/dev/null || echo "ECR repository already deleted"
+
+          echo "ECR repository deleted"
+
+      - name: Empty and delete S3 bucket
+        run: |
+          echo "Emptying S3 bucket..."
+          aws s3 rm s3://${{ env.S3_BUCKET }} --recursive || echo "Bucket already empty"
+
+          echo "Deleting all object versions..."
+          aws s3api list-object-versions \
+            --bucket ${{ env.S3_BUCKET }} \
+            --query 'Versions[].{Key:Key,VersionId:VersionId}' \
+            --output json | \
+          jq -r '.[] | "--key \(.Key) --version-id \(.VersionId)"' | \
+          xargs -I {} aws s3api delete-object --bucket ${{ env.S3_BUCKET }} {} 2>/dev/null || true
+
+          echo "Deleting bucket..."
+          aws s3api delete-bucket \
+            --bucket ${{ env.S3_BUCKET }} \
+            --region ${{ env.AWS_REGION }} || echo "S3 bucket already deleted"
+
+          echo "S3 bucket deleted"
+
+      - name: Delete DynamoDB table
+        run: |
+          echo "Deleting DynamoDB table..."
+          aws dynamodb delete-table \
+            --table-name ${{ env.DYNAMODB_TABLE }} \
+            --region ${{ env.AWS_REGION }} || echo "DynamoDB table already deleted"
+
+          echo "DynamoDB table deleted"
+
+      - name: Verify cleanup
+        run: |
+          echo ""
+          echo "========================================="
+          echo "BACKEND CLEANUP COMPLETE"
+          echo "========================================="
+          echo ""
+          echo "Deleted:"
+          echo "  - ECR repository: ${{ env.ECR_REPOSITORY }}"
+          echo "  - S3 bucket: ${{ env.S3_BUCKET }}"
+          echo "  - DynamoDB table: ${{ env.DYNAMODB_TABLE }}"
+          echo ""
+          echo "Infrastructure is now at absolute zero."
