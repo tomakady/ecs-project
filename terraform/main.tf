@@ -31,7 +31,8 @@ provider "aws" {
 
 # S3 Bucket for Terraform State
 resource "aws_s3_bucket" "terraform_state" {
-  bucket = "memos-terraform-state"
+  bucket        = "memos-terraform-state"
+  force_destroy = true
 
   tags = {
     Name = "Terraform State Bucket"
