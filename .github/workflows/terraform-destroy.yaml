@@ -1,0 +1,56 @@
+name: Terraform Destroy
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm infrastructure destruction'
+        required: true
+        default: "no"
+      image_tag:
+        description: "Image tag for destroy operation"
+        required: false
+        default: "latest"
+
+env:
+  AWS_REGION: eu-west-2
+
+jobs:
+  destroy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./terraform
+    steps:
+      - name: Verify confirmation
+        run: |
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Destruction not confirmed. You must type 'destroy' to proceed."
+            exit 1
+          fi
+          echo "Confirmation received. Proceeding with infrastructure destruction..."
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.8.5
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Destroy
+        id: destroy
+        run: terraform destroy -no-color -input=false -auto-approve -var="image_tag=${{ github.event.inputs.image_tag }}"
+
+      - name: Destruction complete
+        run: echo "Infrastructure destroyed successfully"
