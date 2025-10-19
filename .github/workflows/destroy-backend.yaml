@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       confirm:
-        description: 'Type "destroy-backend" to confirm deletion'
+        description: 'Type "destroy" to confirm deletion'
         required: true
         type: string
 
@@ -20,8 +20,8 @@ jobs:
     steps:
       - name: Validate confirmation
         run: |
-          if [ "${{ github.event.inputs.confirm }}" != "destroy-backend" ]; then
-            echo "Confirmation failed. You must type 'destroy-backend' to proceed."
+          if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
+            echo "Confirmation failed. You must type 'destroy' to proceed."
             exit 1
           fi
           echo "Confirmation validated"
