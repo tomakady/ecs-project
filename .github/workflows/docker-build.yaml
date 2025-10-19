@@ -41,9 +41,9 @@ jobs:
               --image-scanning-configuration scanOnPush=true \
               --encryption-configuration encryptionType=AES256 \
               --region ${{ env.AWS_REGION }}
-            echo "✅ ECR repository created"
+            echo "ECR repository created"
           else
-            echo "✅ ECR repository already exists"
+            echo "ECR repository already exists"
           fi
 
       - name: Build and push Docker image
