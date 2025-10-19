@@ -32,6 +32,20 @@ jobs:
         id: login-ecr
         uses: aws-actions/amazon-ecr-login@v2
 
+      - name: Ensure ECR repository exists
+        run: |
+          if ! aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} 2>&1; then
+            echo "Creating ECR repository..."
+            aws ecr create-repository \
+              --repository-name ${{ env.ECR_REPOSITORY }} \
+              --image-scanning-configuration scanOnPush=true \
+              --encryption-configuration encryptionType=AES256 \
+              --region ${{ env.AWS_REGION }}
+            echo "✅ ECR repository created"
+          else
+            echo "✅ ECR repository already exists"
+          fi
+
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
         with:
