@@ -11,7 +11,12 @@ on:
   workflow_dispatch:
 
 jobs:
+  setup-backend:
+    uses: ./.github/workflows/setup-backend.yaml
+    secrets: inherit
+
   validate:
+    needs: setup-backend
     runs-on: ubuntu-latest
     defaults:
       run:
