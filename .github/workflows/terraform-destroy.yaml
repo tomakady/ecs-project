@@ -18,10 +18,10 @@ env:
 jobs:
   destroy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./terraform
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Verify confirmation
         run: |
           if [ "${{ github.event.inputs.confirm }}" != "destroy" ]; then
@@ -29,9 +29,6 @@ jobs:
             exit 1
           fi
           echo "Confirmation received. Proceeding with infrastructure destruction..."
-
-      - name: Checkout code
-        uses: actions/checkout@v4
 
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
@@ -46,10 +43,11 @@ jobs:
           terraform_version: 1.8.5
 
       - name: Terraform Init
+        working-directory: ./terraform
         run: terraform init -input=false
 
       - name: Terraform Destroy
-        id: destroy
+        working-directory: ./terraform
         run: terraform destroy -no-color -input=false -auto-approve -var="image_tag=${{ github.event.inputs.image_tag }}"
 
       - name: Destruction complete
