@@ -44,21 +44,9 @@ variable "availability_zones" {
 
 # DNS and SSL
 variable "domain_name" {
-  description = "Domain name for the application (e.g., tm.yourdomain.com)"
   type        = string
-  default     = "" # Add default
-}
-
-variable "subject_alternative_names" {
-  description = "Additional domain names for SSL certificate"
-  type        = list(string)
-  default     = []
-}
-
-variable "route53_zone_id" {
-  description = "Route53 hosted zone ID"
-  type        = string
-  default     = "" # Add default
+  description = "Root domain name"
+  default     = "tomakady.com"
 }
 
 # Application Configuration

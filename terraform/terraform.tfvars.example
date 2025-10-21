@@ -1,16 +1,50 @@
 # Save this file as terraform.tfvars and commit it
 # Keep terraform.tfvars gitignored
 
-region   = "eu-west-2"
-ami_id   = "ami-0971f6afca696ace6"
-key_name = "wp-key"
+# Project Configuration
+project_name = "project-name"
+environment  = "dev"
+aws_region   = "region-west-2"
 
-wp_site_title     = "My WordPress Site"
-wp_admin_user     = "admin"
-wp_admin_password = "CHANGE_ME"
-wp_admin_email    = "your-email@example.com"
+# Networking Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+availability_zones   = ["eu-west-2a", "eu-west-2b"]
 
-db_secret_name = "wp/rds-master"
+# DNS Configuration
+domain_name = "domain.com"
 
-allowed_ssh_cidrs  = ["YOUR_IP/32"]
-allowed_http_cidrs = ["0.0.0.0/0"]
+# Application Configuration
+container_name    = "appname"
+container_port    = port
+health_check_path = "/"
+
+# ECS Task Configuration
+task_cpu      = "256"
+task_memory   = "512"
+desired_count = 1
+image_tag     = "latest"
+
+# EFS Configuration
+efs_mount_path = "/var/opt/app"
+
+# Logging
+log_retention_days = 7
+
+# Environment Variables for App Container
+environment_variables = [
+  {
+    name  = "APP_MODE"
+    value = "prod"
+  },
+  {
+    name  = "APP_PORT"
+    value = "5230"
+  }
+]
+
+# ECR Configuration
+image_tag_mutability = "MUTABLE"
+scan_on_push         = true
+image_count_to_keep  = 10

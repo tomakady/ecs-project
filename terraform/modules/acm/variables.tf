@@ -9,11 +9,6 @@ variable "subject_alternative_names" {
   default     = []
 }
 
-variable "route53_zone_id" {
-  description = "Route53 hosted zone ID for DNS validation"
-  type        = string
-}
-
 variable "project_name" {
   description = "Project name for resource naming"
   type        = string
@@ -23,4 +18,8 @@ variable "environment" {
   description = "Environment name"
   type        = string
   default     = "dev"
+}
+
+variable "zone_id" {
+  type = string
 }

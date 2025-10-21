@@ -97,16 +97,29 @@ module "sg" {
   depends_on = [module.vpc]
 }
 
-# ACM Module - COMMENTED OUT FOR TESTING
-# module "acm" {
-#   source = "./modules/acm"
-#
-#   project_name              = var.project_name
-#   environment               = var.environment
-#   domain_name               = var.domain_name
-#   subject_alternative_names = var.subject_alternative_names
-#   route53_zone_id           = var.route53_zone_id
-# }
+# Route53 Module
+module "route53" {
+  source = "./modules/route53"
+
+  project_name = var.project_name
+  environment  = var.environment
+  domain_name  = var.domain_name
+  subdomain    = "tm.${var.domain_name}"
+  alb_dns_name = module.alb.alb_dns_name
+  alb_zone_id  = module.alb.alb_zone_id
+
+  depends_on = [module.alb]
+}
+
+# ACM Module
+module "acm" {
+  source       = "./modules/acm"
+  project_name = var.project_name
+  environment  = var.environment
+  domain_name  = "tm.${var.domain_name}"
+  zone_id      = module.zone_id
+  depends_on   = [module.route53]
+}
 
 # ALB Module
 module "alb" {
@@ -117,26 +130,12 @@ module "alb" {
   vpc_id                = module.vpc.vpc_id
   public_subnet_ids     = module.vpc.public_subnet_ids
   alb_security_group_id = module.sg.alb_security_group_id
-  certificate_arn       = "" # Empty for HTTP-only
+  certificate_arn       = module.acm.certificate_arn
   container_port        = var.container_port
   health_check_path     = var.health_check_path
 
-  depends_on = [module.sg]
+  depends_on = [module.sg, module.acm]
 }
-
-# Route53 Module - COMMENTED OUT FOR TESTING
-# module "route53" {
-#   source = "./modules/route53"
-#
-#   project_name     = var.project_name
-#   environment      = var.environment
-#   route53_zone_id  = var.route53_zone_id
-#   domain_name      = var.domain_name
-#   alb_dns_name     = module.alb.alb_dns_name
-#   alb_zone_id      = module.alb.alb_zone_id
-#
-#   depends_on = [module.alb]
-# }
 
 # EFS Module
 module "efs" {

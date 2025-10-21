@@ -1,14 +1,14 @@
-output "domain_name" {
-  description = "Domain name of the A record"
-  value       = aws_route53_record.main.name
+output "zone_id" {
+  value       = aws_route53_zone.main.zone_id
+  description = "Route53 hosted zone ID"
 }
 
-output "fqdn" {
-  description = "Fully qualified domain name"
-  value       = aws_route53_record.main.fqdn
+output "name_servers" {
+  value       = aws_route53_zone.main.name_servers
+  description = "Name servers for the hosted zone"
 }
 
-output "record_id" {
-  description = "ID of the Route53 record"
-  value       = aws_route53_record.main.id
+output "app_domain" {
+  value       = aws_route53_record.app.fqdn
+  description = "Full domain name for the app"
 }

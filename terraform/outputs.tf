@@ -69,3 +69,18 @@ output "log_group_name" {
   description = "Name of the CloudWatch log group"
   value       = module.ecs.log_group_name
 }
+
+output "nameservers" {
+  value       = module.route53.name_servers
+  description = "Nameservers to configure at names.co.uk"
+}
+
+output "app_url" {
+  value       = "https://tm.${var.domain_name}"
+  description = "Application HTTPS URL"
+}
+
+output "certificate_arn" {
+  value       = module.acm.certificate_arn
+  description = "ACM certificate ARN"
+}

@@ -42,7 +42,25 @@ resource "aws_lb_target_group" "main" {
   }
 }
 
-# HTTPS Listener (only if certificate provided)
+# HTTP Listener
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.main.arn
+  port              = "80"
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.main.arn
+  }
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-http-listener"
+    Environment = var.environment
+  }
+}
+
+
+# HTTPS Listener
 resource "aws_lb_listener" "https" {
   count             = var.certificate_arn != "" ? 1 : 0
   load_balancer_arn = aws_lb.main.arn
@@ -62,19 +80,25 @@ resource "aws_lb_listener" "https" {
   }
 }
 
-# HTTP Listener
-resource "aws_lb_listener" "http" {
-  load_balancer_arn = aws_lb.main.arn
-  port              = "80"
-  protocol          = "HTTP"
+# HTTP to HTTPS redirect
+resource "aws_lb_listener_rule" "redirect_http_to_https" {
+  count        = var.certificate_arn != "" ? 1 : 0
+  listener_arn = aws_lb_listener.http.arn
+  priority     = 1
 
-  default_action {
-    type             = "forward"
-    target_group_arn = aws_lb_target_group.main.arn
+  action {
+    type = "redirect"
+
+    redirect {
+      port        = "443"
+      protocol    = "HTTPS"
+      status_code = "HTTP_301"
+    }
   }
 
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-http-listener"
-    Environment = var.environment
+  condition {
+    path_pattern {
+      values = ["/*"]
+    }
   }
 }
