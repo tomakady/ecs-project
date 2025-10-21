@@ -115,7 +115,7 @@ module "acm" {
   project_name = var.project_name
   environment  = var.environment
   domain_name  = "tm.${var.domain_name}"
-  zone_id      = module.zone_id
+  zone_id      = module.route53.zone_id
 }
 
 # ALB Module
