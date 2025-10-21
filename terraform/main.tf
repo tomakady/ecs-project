@@ -107,8 +107,6 @@ module "route53" {
   subdomain    = "tm.${var.domain_name}"
   alb_dns_name = module.alb.alb_dns_name
   alb_zone_id  = module.alb.alb_zone_id
-
-  depends_on = [module.alb]
 }
 
 # ACM Module
@@ -118,7 +116,6 @@ module "acm" {
   environment  = var.environment
   domain_name  = "tm.${var.domain_name}"
   zone_id      = module.zone_id
-  depends_on   = [module.route53]
 }
 
 # ALB Module
@@ -134,7 +131,7 @@ module "alb" {
   container_port        = var.container_port
   health_check_path     = var.health_check_path
 
-  depends_on = [module.sg, module.acm]
+  depends_on = [module.sg]
 }
 
 # EFS Module
