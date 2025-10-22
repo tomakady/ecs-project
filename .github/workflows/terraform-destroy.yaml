@@ -46,6 +46,25 @@ jobs:
         working-directory: ./terraform
         run: terraform init -input=false
 
+      - name: Clean orphaned DNS records
+        run: |
+          RECORD=$(aws route53 list-resource-record-sets \
+            --hosted-zone-id Z098798336WBPZ6UWLS4I \
+            --query "ResourceRecordSets[?Name=='tm.tomakady.com.' && Type=='A']" \
+            --output json)
+
+          if [ "$RECORD" != "[]" ] && [ "$RECORD" != "" ]; then
+            echo "Deleting A record for tm.tomakady.com..."
+            aws route53 change-resource-record-sets \
+              --hosted-zone-id Z098798336WBPZ6UWLS4I \
+              --change-batch "{\"Changes\":[{\"Action\":\"DELETE\",\"ResourceRecordSet\":$(echo $RECORD | jq '.[0]')}]}" \
+              --region ${{ env.AWS_REGION }}
+            echo "A record deleted"
+          else
+            echo "No A record found to delete"
+          fi
+        continue-on-error: true
+
       - name: Terraform Destroy
         working-directory: ./terraform
         run: terraform destroy -no-color -input=false -auto-approve -var="image_tag=${{ github.event.inputs.image_tag }}"
