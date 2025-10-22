@@ -53,9 +53,7 @@ jobs:
 
       - name: Terraform Apply
         id: apply
-        run: |
-          terraform apply -target=module.vpc -target=module.acm -target=module.route53 -target=module.ecr -auto-approve
-          terraform apply -auto-approve tfplan
+        run: terraform apply -auto-approve tfplan
 
       - name: Apply success
         run: echo "Terraform apply completed with image tag ${{ steps.image-tag.outputs.tag }}"
