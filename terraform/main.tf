@@ -127,11 +127,11 @@ module "alb" {
   vpc_id                = module.vpc.vpc_id
   public_subnet_ids     = module.vpc.public_subnet_ids
   alb_security_group_id = module.sg.alb_security_group_id
-  certificate_arn       = module.acm.certificate_arn
   container_port        = var.container_port
   health_check_path     = var.health_check_path
-
-  depends_on = [module.sg]
+  certificate_arn       = module.acm.certificate_arn
+  enable_https          = true
+  depends_on            = [module.sg]
 }
 
 # EFS Module
