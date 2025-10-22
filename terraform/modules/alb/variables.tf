@@ -40,3 +40,8 @@ variable "health_check_path" {
   type        = string
   default     = "/"
 }
+
+variable "enable_https" {
+  type    = bool
+  default = true
+}
