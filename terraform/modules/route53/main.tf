@@ -1,10 +1,6 @@
-resource "aws_route53_zone" "main" {
-  name = var.domain_name
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-zone"
-    Environment = var.environment
-  }
+data "aws_route53_zone" "main" {
+  name         = var.domain_name
+  private_zone = false
 }
 
 resource "aws_route53_record" "app" {
