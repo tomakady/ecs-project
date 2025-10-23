@@ -13,17 +13,6 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-# CloudWatch Log Group
-resource "aws_cloudwatch_log_group" "main" {
-  name              = "/ecs/${var.project_name}-${var.environment}"
-  retention_in_days = var.log_retention_days
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-logs"
-    Environment = var.environment
-  }
-}
-
 # ECS Task Execution Role
 resource "aws_iam_role" "execution" {
   name = "${var.project_name}-${var.environment}-execution-role"
