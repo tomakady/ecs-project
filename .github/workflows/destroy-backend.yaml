@@ -6,6 +6,7 @@ on:
       confirm:
         description: 'Type "destroy" to confirm deletion'
         required: true
+        default: "no"
         type: string
 
 env:
@@ -53,14 +54,13 @@ jobs:
           echo "Emptying S3 bucket..."
           aws s3 rm s3://${{ env.S3_BUCKET }} --recursive || echo "Bucket already empty"
 
-          echo "Deleting all object versions..."
+          echo "Deleting all object versions and delete markers..."
           aws s3api list-object-versions \
             --bucket ${{ env.S3_BUCKET }} \
             --query 'Versions[].{Key:Key,VersionId:VersionId}' \
             --output json | \
-          jq -r '.[] | "--key \(.Key) --version-id \(.VersionId)"' | \
-          xargs -I {} aws s3api delete-object --bucket ${{ env.S3_BUCKET }} {} 2>/dev/null || true
-
+          jq -r '.Versions[]?, .DeleteMarkers[]? | "--key \"\(.Key)\" --version-id \(.VersionId)"' | \
+          xargs -I {} sh -c 'aws s3api delete-object --bucket ${{ env.S3_BUCKET }} {} 2>/dev/null || true'
           echo "Deleting bucket..."
           aws s3api delete-bucket \
             --bucket ${{ env.S3_BUCKET }} \
