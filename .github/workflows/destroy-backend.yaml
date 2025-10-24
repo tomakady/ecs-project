@@ -57,7 +57,6 @@ jobs:
           echo "Deleting all object versions and delete markers..."
           aws s3api list-object-versions \
             --bucket ${{ env.S3_BUCKET }} \
-            --query 'Versions[].{Key:Key,VersionId:VersionId}' \
             --output json | \
           jq -r '.Versions[]?, .DeleteMarkers[]? | "--key \"\(.Key)\" --version-id \(.VersionId)"' | \
           xargs -I {} sh -c 'aws s3api delete-object --bucket ${{ env.S3_BUCKET }} {} 2>/dev/null || true'
