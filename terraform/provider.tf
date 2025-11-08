@@ -14,6 +14,7 @@ terraform {
     region         = "eu-west-2"
     dynamodb_table = "memos-terraform-locks"
     encrypt        = true
+    # use_lockfile   = false
   }
 }
 
