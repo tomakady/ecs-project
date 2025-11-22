@@ -28,12 +28,4 @@ output "task_definition_arn" {
   value       = aws_ecs_task_definition.main.arn
 }
 
-output "execution_role_arn" {
-  description = "ARN of the task execution role"
-  value       = aws_iam_role.execution.arn
-}
-
-output "task_role_arn" {
-  description = "ARN of the task role"
-  value       = aws_iam_role.task.arn
-}
+# NOTE: IAM role outputs are now in the IAM module

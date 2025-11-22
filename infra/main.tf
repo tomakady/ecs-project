@@ -127,30 +127,46 @@ module "ecr" {
   image_count_to_keep  = var.image_count_to_keep
 }
 
+# IAM Module
+module "iam" {
+  source = "./modules/iam"
+
+  project_name       = var.project_name
+  environment        = var.environment
+  aws_region         = var.aws_region
+  enable_efs_access  = true
+  efs_arn            = module.efs.efs_arn
+  enable_github_oidc = false # Set to true when implementing OIDC
+
+  depends_on = [module.efs]
+}
+
 # ECS Module
 module "ecs" {
   source = "./modules/ecs"
 
-  project_name          = var.project_name
-  environment           = var.environment
-  aws_region            = var.aws_region
-  private_subnet_ids    = module.vpc.private_subnet_ids
-  ecs_security_group_id = module.sg.ecs_security_group_id
-  target_group_arn      = module.alb.target_group_arn
-  alb_listener_arn      = module.alb.alb_arn
-  ecr_repository_url    = module.ecr.repository_url
-  image_tag             = var.image_tag
-  container_name        = var.container_name
-  container_port        = var.container_port
-  task_cpu              = var.task_cpu
-  task_memory           = var.task_memory
-  desired_count         = var.desired_count
-  efs_id                = module.efs.efs_id
-  efs_arn               = module.efs.efs_arn
-  efs_access_point_id   = module.efs.access_point_id
-  efs_mount_path        = var.efs_mount_path
-  log_retention_days    = var.log_retention_days
-  environment_variables = var.environment_variables
+  project_name            = var.project_name
+  environment             = var.environment
+  aws_region              = var.aws_region
+  private_subnet_ids      = module.vpc.private_subnet_ids
+  ecs_security_group_id   = module.sg.ecs_security_group_id
+  target_group_arn        = module.alb.target_group_arn
+  alb_listener_arn        = module.alb.alb_arn
+  ecr_repository_url      = module.ecr.repository_url
+  image_tag               = var.image_tag
+  container_name          = var.container_name
+  container_port          = var.container_port
+  task_cpu                = var.task_cpu
+  task_memory             = var.task_memory
+  desired_count           = var.desired_count
+  efs_id                  = module.efs.efs_id
+  efs_arn                 = module.efs.efs_arn
+  efs_access_point_id     = module.efs.access_point_id
+  efs_mount_path          = var.efs_mount_path
+  log_retention_days      = var.log_retention_days
+  environment_variables   = var.environment_variables
+  task_execution_role_arn = module.iam.task_execution_role_arn
+  task_role_arn           = module.iam.task_role_arn
 
-  depends_on = [module.alb, module.efs, module.ecr, module.sg]
+  depends_on = [module.alb, module.efs, module.ecr, module.sg, module.iam]
 }
