@@ -1,0 +1,50 @@
+# Save this file as terraform.tfvars and commit it
+# Keep terraform.tfvars gitignored
+
+# Project Configuration
+project_name = "project-name"
+environment  = "dev"
+aws_region   = "region-west-2"
+
+# Networking Configuration
+vpc_cidr             = "10.0.0.0/16"
+public_subnet_cidrs  = ["10.0.1.0/24", "10.0.2.0/24"]
+private_subnet_cidrs = ["10.0.10.0/24", "10.0.11.0/24"]
+availability_zones   = ["eu-west-2a", "eu-west-2b"]
+
+# DNS Configuration
+domain_name = "domain.com"
+
+# Application Configuration
+container_name    = "appname"
+container_port    = port
+health_check_path = "/"
+
+# ECS Task Configuration
+task_cpu      = "256"
+task_memory   = "512"
+desired_count = 1
+image_tag     = "latest"
+
+# EFS Configuration
+efs_mount_path = "/var/opt/app"
+
+# Logging
+log_retention_days = 7
+
+# Environment Variables for App Container
+environment_variables = [
+  {
+    name  = "APP_MODE"
+    value = "prod"
+  },
+  {
+    name  = "APP_PORT"
+    value = "5230"
+  }
+]
+
+# ECR Configuration
+image_tag_mutability = "MUTABLE"
+scan_on_push         = true
+image_count_to_keep  = 10
