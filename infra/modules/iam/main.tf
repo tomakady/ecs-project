@@ -170,6 +170,30 @@ resource "aws_iam_role_policy" "ecs_task_cloudwatch_policy" {
   })
 }
 
+# Optional: ECS Exec policy (for debugging containers)
+# Allows you to run: aws ecs execute-command --cluster ... --task ... --interactive --command "/bin/sh"
+resource "aws_iam_role_policy" "ecs_exec_policy" {
+  count = var.enable_ecs_exec ? 1 : 0
+  name  = "${var.project_name}-${var.environment}-exec-policy"
+  role  = aws_iam_role.ecs_task_role.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ssmmessages:CreateControlChannel",
+          "ssmmessages:CreateDataChannel",
+          "ssmmessages:OpenControlChannel",
+          "ssmmessages:OpenDataChannel"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}
+
 # ==============================================================================
 # OPTIONAL: GitHub Actions OIDC Role
 # ==============================================================================
@@ -228,7 +252,9 @@ resource "aws_iam_role_policy" "github_actions_policy" {
           "ecr:PutImage",
           "ecr:InitiateLayerUpload",
           "ecr:UploadLayerPart",
-          "ecr:CompleteLayerUpload"
+          "ecr:CompleteLayerUpload",
+          "ecr:CreateRepository",
+          "ecr:DescribeRepositories"
         ]
         Resource = "*"
       },
@@ -238,9 +264,23 @@ resource "aws_iam_role_policy" "github_actions_policy" {
           "ecs:UpdateService",
           "ecs:DescribeServices",
           "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition"
+          "ecs:RegisterTaskDefinition",
+          "ecs:ListTaskDefinitions"
         ]
         Resource = "*"
+      },
+      {
+        Effect   = "Allow"
+        Action   = "iam:PassRole"
+        Resource = [
+          aws_iam_role.ecs_task_execution_role.arn,
+          aws_iam_role.ecs_task_role.arn
+        ]
+        Condition = {
+          StringEquals = {
+            "iam:PassedToService" = "ecs-tasks.amazonaws.com"
+          }
+        }
       }
     ]
   })

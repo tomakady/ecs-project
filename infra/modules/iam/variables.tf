@@ -97,3 +97,13 @@ variable "github_repo" {
   type        = string
   default     = ""
 }
+
+# ==============================================================================
+# ECS EXEC VARIABLES (for debugging)
+# ==============================================================================
+
+variable "enable_ecs_exec" {
+  description = "Enable ECS Exec for debugging containers via 'aws ecs execute-command'"
+  type        = bool
+  default     = false
+}
