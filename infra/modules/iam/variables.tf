@@ -98,6 +98,10 @@ variable "github_repo" {
   default     = ""
 }
 
+# ==============================================================================
+# ECR 
+# ==============================================================================
+
 variable "ecr_repository_arns" {
   description = "List of ECR repository ARNs to scope permissions (optional, use '*' if not specified)"
   type        = list(string)
@@ -108,4 +112,30 @@ variable "ecs_cluster_arns" {
   description = "List of ECS cluster ARNs for GitHub Actions to manage (optional, use '*' if not specified)"
   type        = list(string)
   default     = []
+}
+
+variable "ecs_service_arns" {
+  description = "List of ECS service ARNs for GitHub Actions to update (optional, use '*' if not specified)"
+  type        = list(string)
+  default     = []
+}
+
+# ==============================================================================
+# ECS EXEC VARIABLES
+# ==============================================================================
+
+variable "enable_ecs_exec" {
+  description = "Enable ECS Exec for debugging containers via 'aws ecs execute-command'"
+  type        = bool
+  default     = false
+}
+
+# ==============================================================================
+# AUTO SCALING VARIABLES
+# ==============================================================================
+
+variable "enable_autoscaling" {
+  description = "Enable Application Auto Scaling for ECS service"
+  type        = bool
+  default     = false
 }

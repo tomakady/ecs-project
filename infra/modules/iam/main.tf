@@ -284,3 +284,67 @@ resource "aws_iam_role_policy" "github_actions_policy" {
     ]
   })
 }
+
+# ==============================================================================
+# OPTIONAL: Application Auto Scaling Role
+# ==============================================================================
+# This role allows Application Auto Scaling to scale ECS services automatically
+# based on CloudWatch metrics (CPU, memory, custom metrics)
+
+ 
+
+resource "aws_iam_role" "ecs_autoscaling_role" {
+  count       = var.enable_autoscaling ? 1 : 0
+  name        = "${var.project_name}-${var.environment}-autoscaling-role"
+  description = "Role for Application Auto Scaling to manage ECS service scaling"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = "sts:AssumeRole"
+        Principal = {
+          Service = "application-autoscaling.amazonaws.com"
+        }
+      }
+    ]
+  })
+
+  tags = {
+    Name        = "${var.project_name}-${var.environment}-autoscaling-role"
+    Environment = var.environment
+    Purpose     = "Application Auto Scaling for ECS"
+  }
+}
+
+# Policy for Auto Scaling role
+
+resource "aws_iam_role_policy" "ecs_autoscaling_policy" {
+  count = var.enable_autoscaling ? 1 : 0
+  name  = "${var.project_name}-${var.environment}-autoscaling-policy"
+  role  = aws_iam_role.ecs_autoscaling_role[0].id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Action = [
+          "ecs:DescribeServices",
+          "ecs:UpdateService"
+        ]
+        Resource = "*"
+      },
+      {
+        Effect = "Allow"
+        Action = [
+          "cloudwatch:PutMetricAlarm",
+          "cloudwatch:DescribeAlarms",
+          "cloudwatch:DeleteAlarms"
+        ]
+        Resource = "*"
+      }
+    ]
+  })
+}

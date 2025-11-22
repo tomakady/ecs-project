@@ -13,79 +13,6 @@ resource "aws_ecs_cluster" "main" {
   }
 }
 
-# ECS Task Execution Role
-resource "aws_iam_role" "execution" {
-  name = "${var.project_name}-${var.environment}-execution-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-execution-role"
-    Environment = var.environment
-  }
-}
-
-# Attach AWS managed policy for ECS task execution
-resource "aws_iam_role_policy_attachment" "execution" {
-  role       = aws_iam_role.execution.name
-  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy"
-}
-
-# ECS Task Role (for application permissions)
-resource "aws_iam_role" "task" {
-  name = "${var.project_name}-${var.environment}-task-role"
-
-  assume_role_policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Action = "sts:AssumeRole"
-        Effect = "Allow"
-        Principal = {
-          Service = "ecs-tasks.amazonaws.com"
-        }
-      }
-    ]
-  })
-
-  tags = {
-    Name        = "${var.project_name}-${var.environment}-task-role"
-    Environment = var.environment
-  }
-}
-
-# Task role policy for EFS access
-resource "aws_iam_role_policy" "efs_access" {
-  name = "${var.project_name}-${var.environment}-efs-policy"
-  role = aws_iam_role.task.id
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect = "Allow"
-        Action = [
-          "elasticfilesystem:ClientMount",
-          "elasticfilesystem:ClientWrite",
-          "elasticfilesystem:DescribeFileSystems"
-        ]
-        Resource = var.efs_arn
-      }
-    ]
-  })
-}
-
 # ECS Task Definition
 resource "aws_ecs_task_definition" "main" {
   family                   = "${var.project_name}-${var.environment}"
@@ -93,8 +20,8 @@ resource "aws_ecs_task_definition" "main" {
   requires_compatibilities = ["FARGATE"]
   cpu                      = var.task_cpu
   memory                   = var.task_memory
-  execution_role_arn       = aws_iam_role.execution.arn
-  task_role_arn            = aws_iam_role.task.arn
+  execution_role_arn       = var.task_execution_role_arn
+  task_role_arn            = var.task_role_arn
 
   container_definitions = jsonencode([
     {

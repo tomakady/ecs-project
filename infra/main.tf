@@ -127,6 +127,20 @@ module "ecr" {
   image_count_to_keep  = var.image_count_to_keep
 }
 
+module "iam" {
+  source = "./modules/iam"
+
+  project_name        = var.project_name
+  environment         = var.environment
+  aws_region          = var.aws_region
+  enable_efs_access   = true
+  efs_arn             = module.efs.efs_arn
+  enable_github_oidc  = false
+  enable_autoscaling  = true
+  depends_on = [module.efs]
+}
+  
+
 # ECS Module
 module "ecs" {
   source = "./modules/ecs"
@@ -151,6 +165,8 @@ module "ecs" {
   efs_mount_path        = var.efs_mount_path
   log_retention_days    = var.log_retention_days
   environment_variables = var.environment_variables
+  task_execution_role_arn = module.iam.task_execution_role_arn
+  task_role_arn           = module.iam.task_role_arn          
 
   depends_on = [module.alb, module.efs, module.ecr, module.sg]
 }
