@@ -129,3 +129,13 @@ variable "ecs_service_arns" {
   type        = list(string)
   default     = []
 }
+
+# ==============================================================================
+# AUTO SCALING VARIABLES
+# ==============================================================================
+
+variable "enable_autoscaling" {
+  description = "Enable Application Auto Scaling for ECS service"
+  type        = bool
+  default     = false
+}
