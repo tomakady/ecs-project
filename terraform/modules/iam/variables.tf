@@ -107,3 +107,25 @@ variable "enable_ecs_exec" {
   type        = bool
   default     = false
 }
+
+# ==============================================================================
+# OPTIONAL: ADDITIONAL SCOPING VARIABLES (for tighter security)
+# ==============================================================================
+
+variable "ecr_repository_arns" {
+  description = "List of ECR repository ARNs to scope permissions (optional, use '*' if not specified)"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_cluster_arns" {
+  description = "List of ECS cluster ARNs for GitHub Actions to manage (optional, use '*' if not specified)"
+  type        = list(string)
+  default     = []
+}
+
+variable "ecs_service_arns" {
+  description = "List of ECS service ARNs for GitHub Actions to update (optional, use '*' if not specified)"
+  type        = list(string)
+  default     = []
+}
