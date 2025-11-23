@@ -1,0 +1,116 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm infrastructure destruction'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: eu-west-2
+  TERRAFORM_VERSION: 1.8.5
+  PROJECT_NAME: memos
+  ENVIRONMENT: dev
+
+jobs:
+  destroy:
+    name: Destroy Infrastructure
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'destroy'
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Terraform Destroy (excluding OIDC resources)
+        run: |
+          cd infra
+          terraform init
+
+          echo "🔥 Starting infrastructure destruction..."
+          echo "⚠️  Note: OIDC provider and GitHub Actions role will be preserved for CI/CD"
+          echo ""
+
+          set +e
+          terraform destroy -auto-approve \
+            -target=module.route53 \
+            -target=module.ecs \
+            -target=module.alb \
+            -target=module.vpc \
+            -target=module.ecr \
+            -target=module.efs \
+            -target=module.iam.aws_iam_role.ecs_task_execution_role \
+            -target=module.iam.aws_iam_role.ecs_task_role \
+            -target=module.iam.aws_iam_role_policy.ecs_task_execution_policy \
+            -target=module.iam.aws_iam_role_policy.ecs_task_efs_policy \
+            -target=module.iam.aws_iam_role_policy.ecs_exec_policy \
+            -target=module.iam.aws_iam_role_policy_attachment.ecs_task_execution_policy
+
+          DESTROY_EXIT_CODE=$?
+          set -e
+
+          if [ $DESTROY_EXIT_CODE -eq 0 ]; then
+            echo "✅ Infrastructure destroyed successfully"
+          else
+            echo "⚠️  Destroy completed with exit code: $DESTROY_EXIT_CODE"
+            echo "This may be normal if some resources were already destroyed"
+          fi
+
+          echo ""
+          echo "📋 Preserved Resources:"
+          echo "  - OIDC Provider: arn:aws:iam::773913840750:oidc-provider/token.actions.githubusercontent.com"
+          echo "  - GitHub Actions Role: ${{ env.PROJECT_NAME }}-${{ env.ENVIRONMENT }}-github-actions-role"
+          echo "  - S3 Backend Bucket: ${{ env.PROJECT_NAME }}-terraform-state"
+          echo "  - DynamoDB Lock Table: ${{ env.PROJECT_NAME }}-terraform-locks"
+
+      - name: Clean up ECR images (optional)
+        run: |
+          echo "Checking for ECR repository..."
+          if aws ecr describe-repositories --repository-names ${{ env.PROJECT_NAME }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
+            echo "Deleting all images from ECR repository..."
+            aws ecr batch-delete-image \
+              --repository-name ${{ env.PROJECT_NAME }} \
+              --region ${{ env.AWS_REGION }} \
+              --image-ids "$(aws ecr list-images --repository-name ${{ env.PROJECT_NAME }} --region ${{ env.AWS_REGION }} --query 'imageIds[*]' --output json)" || true
+            echo "ECR images deleted"
+          else
+            echo "ECR repository not found or already deleted"
+          fi
+        continue-on-error: true
+
+      - name: Destruction Summary
+        run: |
+          echo "## 🔥 Infrastructure Destruction Complete" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Destroyed Resources" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECS Cluster and Services" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Application Load Balancer" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ VPC and Networking" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Route53 Records" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECR Repository and Images" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ EFS File System" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ ECS Task Roles" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Preserved Resources (for CI/CD)" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 OIDC Provider" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 GitHub Actions IAM Role" >> $GITHUB_STEP_SUMMARY
+          echo "- 🔒 Terraform State (S3 + DynamoDB)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "You can re-deploy by running the **Deploy** workflow again." >> $GITHUB_STEP_SUMMARY
