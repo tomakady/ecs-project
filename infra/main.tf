@@ -136,8 +136,8 @@ module "iam" {
   aws_region          = var.aws_region
   enable_efs_access   = true
   efs_arn             = module.efs.efs_arn
-  enable_github_oidc  = true
   enable_autoscaling  = true
+  enable_github_oidc  = true
   github_oidc_provider_arn = "arn:aws:iam::773913840750:oidc-provider/token.actions.githubusercontent.com"
   github_repo              = "tomakady/ecs-project"
 
