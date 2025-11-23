@@ -72,16 +72,16 @@ jobs:
 
       - name: Create IAM and ECR
         run: |
-          cd infra
-          terraform init
-          
-          if ! aws iam get-role --role-name memos-dev-github-actions-role 2>/dev/null; then
+            cd infra
+            terraform init
+            
+            # Always apply IAM to update permissions
             terraform apply -target=module.iam -auto-approve
-          fi
-          
-          if ! aws ecr describe-repositories --repository-names ${{ env.ECR_REPO_NAME }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
+            
+            # Only create ECR if it doesn't exist
+            if ! aws ecr describe-repositories --repository-names ${{ env.ECR_REPO_NAME }} --region ${{ env.AWS_REGION }} 2>/dev/null; then
             terraform apply -target=module.ecr -auto-approve
-          fi
+            fi
 
   build:
     name: Build and Push Docker Image
