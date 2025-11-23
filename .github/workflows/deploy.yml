@@ -1,4 +1,4 @@
-yamlname: Deploy Infrastructure
+name: Deploy Infrastructure
 
 on:
   workflow_dispatch:
