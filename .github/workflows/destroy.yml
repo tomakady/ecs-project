@@ -99,7 +99,11 @@ jobs:
             -target=module.ecr \
             -target=module.vpc \
             -target=module.sg \
-            -target=module.efs
+            -target=module.efs \
+            -target=module.iam.aws_iam_role.ecs_execution \
+            -target=module.iam.aws_iam_role_policy_attachment.ecs_execution \
+            -target=module.iam.aws_iam_role.ecs_task \
+            -target=module.iam.aws_iam_role_policy.ecs_task_logs
 
       - name: Destruction Summary
         run: |
