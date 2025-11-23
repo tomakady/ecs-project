@@ -127,6 +127,7 @@ module "ecr" {
   image_count_to_keep  = var.image_count_to_keep
 }
 
+# IAM Module
 module "iam" {
   source = "./modules/iam"
 
@@ -135,8 +136,11 @@ module "iam" {
   aws_region          = var.aws_region
   enable_efs_access   = true
   efs_arn             = module.efs.efs_arn
-  enable_github_oidc  = false
+  enable_github_oidc  = true
   enable_autoscaling  = true
+  github_oidc_provider_arn = "arn:aws:iam::773913840750:oidc-provider/token.actions.githubusercontent.com"
+  github_repo              = "tomakady/ecs-project"
+
   depends_on = [module.efs]
 }
   
