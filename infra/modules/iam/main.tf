@@ -269,8 +269,8 @@ resource "aws_iam_role_policy" "github_actions_policy" {
       },
       {
         # IAM PassRole - CRITICAL for registering task definitions
-        Effect   = "Allow"
-        Action   = "iam:PassRole"
+        Effect = "Allow"
+        Action = "iam:PassRole"
         Resource = [
           aws_iam_role.ecs_task_execution_role.arn,
           aws_iam_role.ecs_task_role.arn
@@ -291,7 +291,7 @@ resource "aws_iam_role_policy" "github_actions_policy" {
 # This role allows Application Auto Scaling to scale ECS services automatically
 # based on CloudWatch metrics (CPU, memory, custom metrics)
 
- 
+
 
 resource "aws_iam_role" "ecs_autoscaling_role" {
   count       = var.enable_autoscaling ? 1 : 0
