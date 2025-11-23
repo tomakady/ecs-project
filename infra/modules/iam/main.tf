@@ -281,6 +281,42 @@ resource "aws_iam_role_policy" "github_actions_policy" {
             "iam:PassedToService" = "ecs-tasks.amazonaws.com"
           }
         }
+      },
+      {
+        # S3 permissions for Terraform state backend
+        Effect = "Allow"
+        Action = [
+          "s3:ListBucket",
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:DeleteObject",
+          "s3:GetBucketVersioning",
+          "s3:PutBucketVersioning",
+          "s3:GetEncryptionConfiguration",
+          "s3:PutEncryptionConfiguration",
+          "s3:GetBucketPublicAccessBlock",
+          "s3:PutBucketPublicAccessBlock",
+          "s3:CreateBucket",
+          "s3:GetBucketLocation"
+        ]
+        Resource = [
+          "arn:aws:s3:::${var.project_name}-terraform-state",
+          "arn:aws:s3:::${var.project_name}-terraform-state/*"
+        ]
+      },
+      {
+        # DynamoDB permissions for Terraform state locking
+        Effect = "Allow"
+        Action = [
+          "dynamodb:DescribeTable",
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem",
+          "dynamodb:CreateTable",
+          "dynamodb:DescribeTimeToLive",
+          "dynamodb:TagResource"
+        ]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:*:table/${var.project_name}-terraform-locks"
       }
     ]
   })
