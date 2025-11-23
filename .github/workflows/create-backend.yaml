@@ -12,6 +12,10 @@ env:
   S3_BUCKET: memos-terraform-state
   DYNAMODB_TABLE: memos-terraform-locks
 
+permissions:
+  id-token: write  # ← Required for OIDC
+  contents: read
+
 jobs:
   setup:
     runs-on: ubuntu-latest
@@ -19,8 +23,7 @@ jobs:
       - name: Configure AWS credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          role-to-assume: arn:aws:iam::YOUR_ACCOUNT_ID:role/memos-dev-github-actions-role
           aws-region: ${{ env.AWS_REGION }}
 
       - name: Create S3 bucket for Terraform state
@@ -82,4 +85,3 @@ jobs:
         run: |
           echo "Waiting for resources to stabilize..."
           sleep 10
-          echo "Backend setup complete"
