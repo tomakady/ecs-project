@@ -1,4 +1,10 @@
 # ==============================================================================
+# DATA SOURCES
+# ==============================================================================
+
+data "aws_caller_identity" "current" {}
+
+# ==============================================================================
 # ECS TASK EXECUTION ROLE
 # ==============================================================================
 resource "aws_iam_role" "ecs_task_execution_role" {
@@ -236,7 +242,30 @@ resource "aws_iam_role_policy" "github_actions_policy" {
     Version = "2012-10-17"
     Statement = [
       {
-        # ECR permissions - scoped to only push/pull
+        # S3 backend permissions
+        Effect = "Allow"
+        Action = [
+          "s3:GetObject",
+          "s3:PutObject",
+          "s3:ListBucket"
+        ]
+        Resource = [
+          "arn:aws:s3:::memos-terraform-state",
+          "arn:aws:s3:::memos-terraform-state/*"
+        ]
+      },
+      {
+        # DynamoDB state locking
+        Effect = "Allow"
+        Action = [
+          "dynamodb:GetItem",
+          "dynamodb:PutItem",
+          "dynamodb:DeleteItem"
+        ]
+        Resource = "arn:aws:dynamodb:${var.aws_region}:*:table/memos-terraform-locks"
+      },
+      {
+        # ECR permissions
         Effect = "Allow"
         Action = [
           "ecr:GetAuthorizationToken",
@@ -251,35 +280,76 @@ resource "aws_iam_role_policy" "github_actions_policy" {
           "ecr:DescribeRepositories"
         ]
         Resource = "*"
-        # Note: Some ECR actions don't support resource-level permissions
       },
       {
-        # ECS permissions - only deployment actions, NOT destructive ones
+        # ECS permissions
         Effect = "Allow"
         Action = [
-          "ecs:UpdateService",
-          "ecs:DescribeServices",
-          "ecs:DescribeTaskDefinition",
-          "ecs:RegisterTaskDefinition",
-          "ecs:ListTaskDefinitions",
-          "ecs:DescribeClusters"
+          "ecs:*"
         ]
         Resource = "*"
-        # Could be further scoped to specific cluster/service ARNs if needed
       },
       {
-        # IAM PassRole - CRITICAL for registering task definitions
+        # EC2/VPC permissions
+        Effect = "Allow"
+        Action = [
+          "ec2:*"
+        ]
+        Resource = "*"
+      },
+      {
+        # ELB permissions
+        Effect = "Allow"
+        Action = [
+          "elasticloadbalancing:*"
+        ]
+        Resource = "*"
+      },
+      {
+        # Route53 permissions
+        Effect = "Allow"
+        Action = [
+          "route53:*"
+        ]
+        Resource = "*"
+      },
+      {
+        # ACM permissions
+        Effect = "Allow"
+        Action = [
+          "acm:*"
+        ]
+        Resource = "*"
+      },
+      {
+        # CloudWatch permissions
+        Effect = "Allow"
+        Action = [
+          "logs:*"
+        ]
+        Resource = "*"
+      },
+      {
+        # IAM PassRole
         Effect = "Allow"
         Action = "iam:PassRole"
         Resource = [
-          aws_iam_role.ecs_task_execution_role.arn,
-          aws_iam_role.ecs_task_role.arn
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-${var.environment}-execution-role",
+          "arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-${var.environment}-task-role"
         ]
         Condition = {
           StringEquals = {
             "iam:PassedToService" = "ecs-tasks.amazonaws.com"
           }
         }
+      },
+      {
+        # EFS permissions
+        Effect = "Allow"
+        Action = [
+          "elasticfilesystem:*"
+        ]
+        Resource = "*"
       }
     ]
   })
