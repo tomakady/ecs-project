@@ -1,0 +1,102 @@
+name: Destroy Infrastructure
+
+on:
+  workflow_dispatch:
+    inputs:
+      confirm:
+        description: 'Type "destroy" to confirm'
+        required: true
+        type: string
+
+env:
+  AWS_REGION: eu-west-2
+  TERRAFORM_VERSION: 1.8.5
+  ECS_CLUSTER: memos-dev-cluster
+  ECS_SERVICE: memos-dev-service
+  HOSTED_ZONE_ID: Z098798336WBPZ6UWLS4I
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  destroy:
+    name: Destroy Infrastructure
+    runs-on: ubuntu-latest
+    if: github.event.inputs.confirm == 'destroy'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: arn:aws:iam::773913840750:role/memos-dev-github-actions-role
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+      - name: Clean orphaned DNS records
+        run: |
+          RECORD=$(aws route53 list-resource-record-sets \
+            --hosted-zone-id ${{ env.HOSTED_ZONE_ID }} \
+            --query "ResourceRecordSets[?Name=='tm.tomakady.com.' && Type=='A']" \
+            --output json)
+          
+          if [ "$RECORD" != "[]" ] && [ "$RECORD" != "" ]; then
+            echo "Deleting A record for tm.tomakady.com..."
+            aws route53 change-resource-record-sets \
+              --hosted-zone-id ${{ env.HOSTED_ZONE_ID }} \
+              --change-batch "{\"Changes\":[{\"Action\":\"DELETE\",\"ResourceRecordSet\":$(echo $RECORD | jq '.[0]')}]}" \
+              --region ${{ env.AWS_REGION }}
+            echo "A record deleted"
+          else
+            echo "No A record found to delete"
+          fi
+        continue-on-error: true
+
+      - name: Force stop ECS tasks
+        run: |
+          echo "Stopping all tasks in ECS service..."
+          TASK_ARNS=$(aws ecs list-tasks \
+            --cluster ${{ env.ECS_CLUSTER }} \
+            --service-name ${{ env.ECS_SERVICE }} \
+            --region ${{ env.AWS_REGION }} \
+            --query 'taskArns[*]' \
+            --output text)
+          
+          if [ ! -z "$TASK_ARNS" ]; then
+            for TASK_ARN in $TASK_ARNS; do
+              echo "Stopping task: $TASK_ARN"
+              aws ecs stop-task \
+                --cluster ${{ env.ECS_CLUSTER }} \
+                --task $TASK_ARN \
+                --region ${{ env.AWS_REGION }}
+            done
+            echo "Waiting for tasks to stop..."
+            sleep 30
+          else
+            echo "No tasks to stop"
+          fi
+        continue-on-error: true
+
+      - name: Terraform Init
+        working-directory: ./infra
+        run: terraform init
+
+      - name: Terraform Destroy
+        working-directory: ./infra
+        run: |
+          terraform destroy -auto-approve
+          echo "Infrastructure destroyed successfully"
+
+      - name: Destruction Summary
+        run: |
+          echo "## Infrastructure Destroyed" >> $GITHUB_STEP_SUMMARY
+          echo "All resources have been removed from AWS" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "**Note:** GitHub Actions IAM role remains for future deployments" >> $GITHUB_STEP_SUMMARY
