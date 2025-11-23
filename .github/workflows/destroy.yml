@@ -91,8 +91,15 @@ jobs:
       - name: Terraform Destroy
         working-directory: ./infra
         run: |
-          terraform destroy -auto-approve
-          echo "Infrastructure destroyed successfully"
+            terraform destroy -auto-approve \
+            -target=module.route53 \
+            -target=module.acm \
+            -target=module.ecs \
+            -target=module.alb \
+            -target=module.ecr \
+            -target=module.vpc \
+            -target=module.sg \
+            -target=module.efs
 
       - name: Destruction Summary
         run: |
